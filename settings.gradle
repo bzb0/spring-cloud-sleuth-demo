@@ -1,3 +1,4 @@
 rootProject.name = 'spring-cloud-sleuth-demo'
 
 include 'products-service'
+include 'sales-service'
