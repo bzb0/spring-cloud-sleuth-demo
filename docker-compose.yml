@@ -1,0 +1,66 @@
+version: "3"
+
+services:
+  zipkin:
+    image: "openzipkin/zipkin:2.21.0"
+    restart: "always"
+    container_name: "zipkin"
+    ports:
+      - "9411:9411"
+  users-service:
+    image: bzb0/sleuth-demo-users-service:0.0.1-SNAPSHOT
+    build:
+      context: ./users-service
+      args:
+        - APP_DIR=build/libs
+        - APP_JAR=users-service-0.0.1-SNAPSHOT.jar
+        - SALES_SERVICE_URL=http://sleuth-demo-sales-service:8081
+    environment:
+      WAIT_HOSTS: "zipkin:9411,sales-service:8081"
+    container_name: sleuth-demo-users-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - zipkin
+      - sales-service
+    links:
+      - zipkin
+      - sales-service
+    restart: "always"
+  sales-service:
+    image: bzb0/sleuth-demo-sales-service:0.0.1-SNAPSHOT
+    build:
+      context: ./sales-service
+      args:
+        - APP_DIR=build/libs
+        - APP_JAR=sales-service-0.0.1-SNAPSHOT.jar
+        - PRODUCTS_SERVICE_URL=http://sleuth-demo-products-service:8082
+    environment:
+      WAIT_HOSTS: "zipkin:9411,products-service:8082"
+    container_name: sleuth-demo-sales-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - zipkin
+      - products-service
+    links:
+      - zipkin
+      - products-service
+    restart: "always"
+  products-service:
+    image: bzb0/sleuth-demo-products-service:0.0.1-SNAPSHOT
+    build:
+      context: ./products-service
+      args:
+        - APP_DIR=build/libs
+        - APP_JAR=products-service-0.0.1-SNAPSHOT.jar
+    environment:
+      WAIT_HOSTS: "zipkin:9411"
+    container_name: sleuth-demo-products-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - zipkin
+    links:
+      - zipkin
+    restart: "always"
